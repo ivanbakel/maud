@@ -179,10 +179,10 @@ impl Parser {
             lit.span().error("expected string").emit();
             String::new()  // Insert a dummy value
         });
-        Ok(ast::Markup::Literal {
+        Ok(ast::Markup::Literal(ast::Literal {
             content,
             span: lit.span(),
-        })
+        }))
     }
 
     /// Parses an `@if` expression.

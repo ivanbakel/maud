@@ -3,10 +3,7 @@ use proc_macro::{Span, TokenStream, TokenTree};
 #[derive(Debug)]
 pub enum Markup {
     Block(Block),
-    Literal {
-        content: String,
-        span: Span,
-    },
+    Literal(Literal),
     Symbol {
         symbol: TokenStream,
     },
@@ -26,7 +23,7 @@ impl Markup {
     pub fn span(&self) -> Span {
         match *self {
             Markup::Block(ref block) => block.span(),
-            Markup::Literal { span, .. } => span,
+            Markup::Literal(ref literal) => literal.span(),
             Markup::Symbol { ref symbol } => span_tokens(symbol.clone()),
             Markup::Splice { outer_span, .. } => outer_span,
             Markup::Element { ref name, ref body, .. } => {
@@ -101,6 +98,18 @@ pub struct Block {
 impl Block {
     pub fn span(&self) -> Span {
         self.outer_span
+    }
+}
+    
+#[derive(Debug)]
+pub struct Literal {
+    pub content: String,
+    pub span: Span,
+}
+
+impl Literal {
+    fn span(&self) -> Span {
+        self.span
     }
 }
 
