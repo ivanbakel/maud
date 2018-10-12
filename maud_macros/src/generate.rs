@@ -48,7 +48,7 @@ impl Generator {
             },
             Markup::Literal(::ast::Literal { content, .. }) => build.push_escaped(&content),
             Markup::Symbol { symbol } => self.name(symbol, build),
-            Markup::Splice { expr, .. } => build.push_tokens(self.splice(expr)),
+            Markup::Splice(Splice { expr, .. }) => build.push_tokens(self.splice(expr)),
             Markup::Element { name, attrs, body } => self.element(name, attrs, body, build),
             Markup::Command(command) => self.command(command, build),
         }

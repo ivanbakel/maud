@@ -7,10 +7,7 @@ pub enum Markup {
     Symbol {
         symbol: TokenStream,
     },
-    Splice {
-        expr: TokenStream,
-        outer_span: Span,
-    },
+    Splice(Splice),
     Element {
         name: TokenStream,
         attrs: Attrs,
@@ -25,7 +22,7 @@ impl Markup {
             Markup::Block(ref block) => block.span(),
             Markup::Literal(ref literal) => literal.span(),
             Markup::Symbol { ref symbol } => span_tokens(symbol.clone()),
-            Markup::Splice { outer_span, .. } => outer_span,
+            Markup::Splice(ref splice) => splice.span(),
             Markup::Element { ref name, ref body, .. } => {
                 let name_span = span_tokens(name.clone());
                 name_span.join(body.span()).unwrap_or(name_span)
@@ -110,6 +107,18 @@ pub struct Literal {
 impl Literal {
     fn span(&self) -> Span {
         self.span
+    }
+}
+
+#[derive(Debug)]
+pub struct Splice {
+    pub expr: TokenStream,
+    pub outer_span: Span,
+}
+
+impl Splice {
+    fn span(&self) -> Span {
+        self.outer_span
     }
 }
 
