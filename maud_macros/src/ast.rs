@@ -19,19 +19,7 @@ pub enum Markup {
         attrs: Attrs,
         body: ElementBody,
     },
-    Let {
-        at_span: Span,
-        tokens: TokenStream,
-    },
-    Special {
-        segments: Vec<Special>,
-    },
-    Match {
-        at_span: Span,
-        head: TokenStream,
-        arms: Vec<MatchArm>,
-        arms_span: Span,
-    },
+    Command(Command),
 }
 
 impl Markup {
@@ -45,15 +33,7 @@ impl Markup {
                 let name_span = span_tokens(name.clone());
                 name_span.join(body.span()).unwrap_or(name_span)
             },
-            Markup::Let { at_span, ref tokens } => {
-                at_span.join(span_tokens(tokens.clone())).unwrap_or(at_span)
-            },
-            Markup::Special { ref segments } => {
-                join_spans(segments.iter().map(|segment| segment.span()))
-            },
-            Markup::Match { at_span, arms_span, .. } => {
-                at_span.join(arms_span).unwrap_or(at_span)
-            },
+            Markup::Command(ref command) => command.span(),
         }
     }
 }
@@ -121,6 +101,39 @@ pub struct Block {
 impl Block {
     pub fn span(&self) -> Span {
         self.outer_span
+    }
+}
+
+#[derive(Debug)]
+pub enum Command {
+    Let {
+        at_span: Span,
+        tokens: TokenStream,
+    },
+    Special {
+        segments: Vec<Special>,
+    },
+    Match {
+        at_span: Span,
+        head: TokenStream,
+        arms: Vec<MatchArm>,
+        arms_span: Span,
+    },
+}
+
+impl Command {
+    pub fn span(&self) -> Span {
+        match *self {
+            Command::Let { at_span, ref tokens } => {
+                at_span.join(span_tokens(tokens.clone())).unwrap_or(at_span)
+            },
+            Command::Special { ref segments } => {
+                join_spans(segments.iter().map(|segment| segment.span()))
+            },
+            Command::Match { at_span, arms_span, .. } => {
+                at_span.join(arms_span).unwrap_or(at_span)
+            },
+        }
     }
 }
 

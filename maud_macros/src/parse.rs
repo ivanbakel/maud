@@ -122,7 +122,7 @@ impl Parser {
                             "if" => {
                                 let mut segments = Vec::new();
                                 self.if_expr(at_span, vec![keyword], &mut segments)?;
-                                ast::Markup::Special { segments }
+                                ast::Markup::Command(ast::Command::Special { segments })
                             },
                             "while" => self.while_expr(at_span, keyword)?,
                             "for" => self.for_expr(at_span, keyword)?,
@@ -282,9 +282,9 @@ impl Parser {
                 },
             }
         };
-        Ok(ast::Markup::Special {
+        Ok(ast::Markup::Command(ast::Command::Special {
             segments: vec![ast::Special { at_span, head: head.into_iter().collect(), body }],
-        })
+        }))
     }
 
     /// Parses a `@for` expression.
@@ -320,9 +320,9 @@ impl Parser {
                 },
             }
         };
-        Ok(ast::Markup::Special {
+        Ok(ast::Markup::Command(ast::Command::Special {
             segments: vec![ast::Special { at_span, head: head.into_iter().collect(), body }],
-        })
+        }))
     }
 
     /// Parses a `@match` expression.
@@ -345,7 +345,7 @@ impl Parser {
                 },
             }
         };
-        Ok(ast::Markup::Match { at_span, head: head.into_iter().collect(), arms, arms_span })
+        Ok(ast::Markup::Command(ast::Command::Match { at_span, head: head.into_iter().collect(), arms, arms_span }))
     }
 
     fn match_arms(&mut self) -> ParseResult<Vec<ast::MatchArm>> {
@@ -465,7 +465,7 @@ impl Parser {
                 },
             }
         }
-        Ok(ast::Markup::Let { at_span, tokens: tokens.into_iter().collect() })
+        Ok(ast::Markup::Command(ast::Command::Let { at_span, tokens: tokens.into_iter().collect() }))
     }
 
     /// Parses an element node.

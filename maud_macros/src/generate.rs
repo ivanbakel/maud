@@ -40,7 +40,7 @@ impl Generator {
     fn markup(&self, markup: Markup, build: &mut Builder) {
         match markup {
             Markup::Block(Block { markups, outer_span }) => {
-                if markups.iter().any(|markup| matches!(*markup, Markup::Let { .. })) {
+                if markups.iter().any(|markup| matches!(*markup, Markup::Command(Command::Let { .. }))) {
                     build.push_tokens(self.block(Block { markups, outer_span }));
                 } else {
                     self.markups(markups, build);
@@ -50,23 +50,7 @@ impl Generator {
             Markup::Symbol { symbol } => self.name(symbol, build),
             Markup::Splice { expr, .. } => build.push_tokens(self.splice(expr)),
             Markup::Element { name, attrs, body } => self.element(name, attrs, body, build),
-            Markup::Let { tokens, .. } => build.push_tokens(tokens),
-            Markup::Special { segments } => {
-                for segment in segments {
-                    build.push_tokens(self.special(segment));
-                }
-            },
-            Markup::Match { head, arms, arms_span, .. } => {
-                build.push_tokens({
-                    let body = arms
-                        .into_iter()
-                        .map(|arm| self.match_arm(arm))
-                        .collect();
-                    let mut body = TokenTree::Group(Group::new(Delimiter::Brace, body));
-                    body.set_span(arms_span);
-                    quote!($head $body)
-                });
-            },
+            Markup::Command(command) => self.command(command, build),
         }
     }
 
@@ -144,6 +128,28 @@ impl Generator {
         }
     }
 
+    fn command(&self, command: Command, build: &mut Builder) {
+        match command {
+            Command::Let { tokens, .. } => build.push_tokens(tokens),
+            Command::Special { segments } => {
+                for segment in segments {
+                    build.push_tokens(self.special(segment));
+                }
+            },
+            Command::Match { head, arms, arms_span, .. } => {
+                build.push_tokens({
+                    let body = arms
+                        .into_iter()
+                        .map(|arm| self.match_arm(arm))
+                        .collect();
+                    let mut body = TokenTree::Group(Group::new(Delimiter::Brace, body));
+                    body.set_span(arms_span);
+                    quote!($head $body)
+                });
+            },
+        }
+    }
+
     fn special(&self, Special { head, body, .. }: Special) -> TokenStream {
         let body = self.block(body);
         quote!($head $body)
@@ -199,9 +205,9 @@ fn desugar_classes_or_ids(
             outer_span: toggler.cond_span,
         };
         let head = desugar_toggler(toggler);
-        markups.push(Markup::Special {
+        markups.push(Markup::Command(Command::Special {
             segments: vec![Special { at_span: Span::call_site(), head, body }],
-        });
+        }));
     }
     Some(Attribute {
         name: TokenStream::from(TokenTree::Ident(Ident::new(attr_name, Span::call_site()))),
