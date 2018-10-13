@@ -1,4 +1,14 @@
-use proc_macro::{Span, TokenStream, TokenTree};
+use engine;
+pub use engine::ast::{Literal, Splice, Command, span_tokens};
+
+pub type Block = engine::ast::Block<Markup>;
+// Type aliasing an enum doesn't give proper access to the values (RFC #2338),
+// so this, while desirable, isn't possible
+//pub type Command = engine::ast::Command<Markup>;
+pub type Special = engine::ast::Special<Markup>;
+pub type MatchArm = engine::ast::MatchArm<Markup>;
+
+use proc_macro::{Span, TokenStream};
 
 #[derive(Debug)]
 pub enum Markup {
@@ -13,7 +23,7 @@ pub enum Markup {
         attrs: Attrs,
         body: ElementBody,
     },
-    Command(Command),
+    Command(Command<Markup>),
 }
 
 impl Markup {
@@ -87,89 +97,6 @@ impl ElementBody {
 }
 
 #[derive(Debug)]
-pub struct Block {
-    pub markups: Vec<Markup>,
-    pub outer_span: Span,
-}
-
-impl Block {
-    pub fn span(&self) -> Span {
-        self.outer_span
-    }
-}
-    
-#[derive(Debug)]
-pub struct Literal {
-    pub content: String,
-    pub span: Span,
-}
-
-impl Literal {
-    fn span(&self) -> Span {
-        self.span
-    }
-}
-
-#[derive(Debug)]
-pub struct Splice {
-    pub expr: TokenStream,
-    pub outer_span: Span,
-}
-
-impl Splice {
-    fn span(&self) -> Span {
-        self.outer_span
-    }
-}
-
-#[derive(Debug)]
-pub enum Command {
-    Let {
-        at_span: Span,
-        tokens: TokenStream,
-    },
-    Special {
-        segments: Vec<Special>,
-    },
-    Match {
-        at_span: Span,
-        head: TokenStream,
-        arms: Vec<MatchArm>,
-        arms_span: Span,
-    },
-}
-
-impl Command {
-    pub fn span(&self) -> Span {
-        match *self {
-            Command::Let { at_span, ref tokens } => {
-                at_span.join(span_tokens(tokens.clone())).unwrap_or(at_span)
-            },
-            Command::Special { ref segments } => {
-                join_spans(segments.iter().map(|segment| segment.span()))
-            },
-            Command::Match { at_span, arms_span, .. } => {
-                at_span.join(arms_span).unwrap_or(at_span)
-            },
-        }
-    }
-}
-
-#[derive(Debug)]
-pub struct Special {
-    pub at_span: Span,
-    pub head: TokenStream,
-    pub body: Block,
-}
-
-impl Special {
-    pub fn span(&self) -> Span {
-        let body_span = self.body.span();
-        self.at_span.join(body_span).unwrap_or(self.at_span)
-    }
-}
-
-#[derive(Debug)]
 pub struct Attribute {
     pub name: TokenStream,
     pub attr_type: AttrType,
@@ -217,26 +144,3 @@ impl Toggler {
     }
 }
 
-#[derive(Debug)]
-pub struct MatchArm {
-    pub head: TokenStream,
-    pub body: Block,
-}
-
-pub fn span_tokens<I: IntoIterator<Item=TokenTree>>(tokens: I) -> Span {
-    join_spans(tokens.into_iter().map(|token| token.span()))
-}
-
-pub fn join_spans<I: IntoIterator<Item=Span>>(spans: I) -> Span {
-    let mut iter = spans.into_iter();
-    let mut span = match iter.next() {
-        Some(span) => span,
-        None => return Span::call_site(),
-    };
-    for new_span in iter {
-        if let Some(joined) = span.join(new_span) {
-            span = joined;
-        }
-    }
-    span
-}

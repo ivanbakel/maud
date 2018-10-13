@@ -128,7 +128,7 @@ impl Generator {
         }
     }
 
-    fn command(&self, command: Command, build: &mut Builder) {
+    fn command(&self, command: Command<Markup>, build: &mut Builder) {
         match command {
             Command::Let { tokens, .. } => build.push_tokens(tokens),
             Command::Special { segments } => {

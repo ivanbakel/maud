@@ -17,6 +17,7 @@ extern crate maud_htmlescape;
 extern crate proc_macro;
 
 mod html;
+mod engine;
 
 use proc_macro::{Literal, Span, Ident, TokenStream, TokenTree};
 use proc_macro::quote;
