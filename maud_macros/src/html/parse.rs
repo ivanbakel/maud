@@ -11,7 +11,7 @@ use std::mem;
 
 use literalext::LiteralExt;
 
-use ast;
+use html::ast;
 use ParseResult;
 
 pub fn parse(input: TokenStream) -> ParseResult<Vec<ast::Markup>> {

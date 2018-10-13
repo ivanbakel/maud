@@ -16,9 +16,7 @@ extern crate literalext;
 extern crate maud_htmlescape;
 extern crate proc_macro;
 
-mod ast;
-mod generate;
-mod parse;
+mod html;
 
 use proc_macro::{Literal, Span, Ident, TokenStream, TokenTree};
 use proc_macro::quote;
@@ -43,11 +41,11 @@ fn expand(input: TokenStream) -> TokenStream {
     // code size of the template itself
     let size_hint = input.to_string().len();
     let size_hint = TokenTree::Literal(Literal::u64_unsuffixed(size_hint as u64));
-    let markups = match parse::parse(input) {
+    let markups = match html::parse::parse(input) {
         Ok(markups) => markups,
         Err(()) => Vec::new(),
     };
-    let stmts = generate::generate(markups, output_ident.clone());
+    let stmts = html::generate::generate(markups, output_ident.clone());
     quote!({
         extern crate maud;
         let mut $output_ident = String::with_capacity($size_hint);

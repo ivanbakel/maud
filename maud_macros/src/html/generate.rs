@@ -10,7 +10,7 @@ use proc_macro::{
     TokenTree,
 };
 
-use ast::*;
+use html::ast::*;
 
 pub fn generate(markups: Vec<Markup>, output_ident: TokenTree) -> TokenStream {
     let mut build = Builder::new(output_ident.clone());
@@ -46,7 +46,7 @@ impl Generator {
                     self.markups(markups, build);
                 }
             },
-            Markup::Literal(::ast::Literal { content, .. }) => build.push_escaped(&content),
+            Markup::Literal(::html::ast::Literal { content, .. }) => build.push_escaped(&content),
             Markup::Symbol { symbol } => self.name(symbol, build),
             Markup::Splice(Splice { expr, .. }) => build.push_tokens(self.splice(expr)),
             Markup::Element { name, attrs, body } => self.element(name, attrs, body, build),
@@ -223,7 +223,7 @@ fn desugar_classes_or_ids(
 fn prepend_leading_space(name: Markup, leading_space: &mut bool) -> Vec<Markup> {
     let mut markups = Vec::new();
     if *leading_space {
-        markups.push(Markup::Literal(::ast::Literal {
+        markups.push(Markup::Literal(::html::ast::Literal {
             content: " ".to_owned(),
             span: name.span(),
         }));
