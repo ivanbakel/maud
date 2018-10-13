@@ -2,7 +2,7 @@ use proc_macro::{Span, TokenStream, TokenTree};
 
 #[derive(Debug)]
 pub struct Block<C> {
-    pub markups: Vec<C>,
+    pub contents: Vec<C>,
     pub outer_span: Span,
 }
 
