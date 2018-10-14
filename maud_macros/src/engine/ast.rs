@@ -53,6 +53,7 @@ pub enum Command<C> {
     },
 }
 
+
 impl<C> Command<C> {
     pub fn span(&self) -> Span {
         match *self {

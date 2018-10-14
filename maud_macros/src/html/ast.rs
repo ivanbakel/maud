@@ -6,7 +6,6 @@ pub type Block = engine::ast::Block<Markup>;
 // so this, while desirable, isn't possible
 //pub type Command = engine::ast::Command<Markup>;
 pub type Special = engine::ast::Special<Markup>;
-pub type MatchArm = engine::ast::MatchArm<Markup>;
 
 use proc_macro::{Span, TokenStream};
 
@@ -39,6 +38,12 @@ impl Markup {
             },
             Markup::Command(ref command) => command.span(),
         }
+    }
+}
+
+impl From<Command<Markup>> for Markup {
+    fn from(command: Command<Markup>) -> Self {
+        Markup::Command(command)
     }
 }
 
