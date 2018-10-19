@@ -92,34 +92,8 @@ impl EngineParser for Parser {
             TokenTree::Punct(ref punct) if punct.as_char() == '@' => {
                 self.advance();
                 let at_span = punct.span();
-                match <Self as EngineParser>::next(self) {
-                    Some(TokenTree::Ident(ident)) => {
-                        let keyword = TokenTree::Ident(ident.clone());
-                        let command = match ident.to_string().as_str() {
-                            "if" => self.if_expr(at_span, keyword)?,
-                            "while" => self.while_expr(at_span, keyword)?,
-                            "for" => self.for_expr(at_span, keyword)?,
-                            "match" => self.match_expr(at_span, keyword)?,
-                            "let" => {
-                                let ident_span = ident.span();
-                                let span = at_span.join(ident_span).unwrap_or(ident_span);
-                                span.error("`@let` only works inside a block").emit();
-                                self.let_expr(at_span, keyword)?
-                            },
-                            other => {
-                                let ident_span = ident.span();
-                                let span = at_span.join(ident_span).unwrap_or(ident_span);
-                                span.error(format!("unknown keyword `@{}`", other)).emit();
-                                return Err(());
-                            }
-                        };
-                        ast::Markup::from(command)
-                    },
-                    _ => {
-                        at_span.error("expected keyword after `@`").emit();
-                        return Err(());
-                    },
-                }
+                let command = self.command(at_span)?;
+                ast::Markup::from(command)
             },
             // Element
             TokenTree::Ident(_) => {

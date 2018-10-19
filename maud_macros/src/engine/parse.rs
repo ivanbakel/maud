@@ -49,6 +49,34 @@ pub trait Parser : Sized {
     fn contents(&mut self) -> ParseResult<Vec<Self::Content>>;
     fn content(&mut self) -> ParseResult<Self::Content>;
 
+    /// Parses a template command, like loops and assignments
+    ///
+    /// Any command marker, like a `@`, should already be consumed
+    fn command(&mut self, at_span: Span) -> ParseResult<ast::Command<Self::Content>> {
+        match self.next() {
+            Some(TokenTree::Ident(ident)) => {
+                let keyword = TokenTree::Ident(ident.clone());
+                match ident.to_string().as_str() {
+                    "if" => self.if_expr(at_span, keyword),
+                    "while" => self.while_expr(at_span, keyword),
+                    "for" => self.for_expr(at_span, keyword),
+                    "match" => self.match_expr(at_span, keyword),
+                    "let" => self.let_expr(at_span, keyword),
+                    other => {
+                        let ident_span = ident.span();
+                        let span = at_span.join(ident_span).unwrap_or(ident_span);
+                        span.error(format!("unknown keyword `@{}`", other)).emit();
+                        Err(())
+                    }
+                }
+            },
+            _ => {
+                at_span.error("expected keyword after `@`").emit();
+                Err(())
+            },
+        }
+    }
+
     /// Parses a `@let` expression.
     ///
     /// The leading `@let` should already be consumed.
