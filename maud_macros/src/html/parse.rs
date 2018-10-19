@@ -105,12 +105,12 @@ impl EngineParser for Parser {
             // Splice
             TokenTree::Group(ref group) if group.delimiter() == Delimiter::Parenthesis => {
                 self.advance();
-                ast::Markup::Splice(ast::Splice { expr: group.stream(), outer_span: group.span() })
+                ast::Markup::Splice(self.splice(group))
             }
             // Block
             TokenTree::Group(ref group) if group.delimiter() == Delimiter::Brace => {
                 self.advance();
-                ast::Markup::Block(self.block(group.stream(), group.span())?)
+                ast::Markup::Block(self.block(group)?)
             },
             // ???
             token => {

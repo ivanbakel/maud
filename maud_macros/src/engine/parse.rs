@@ -4,6 +4,7 @@ use proc_macro::{
     Span,
     TokenStream,
     TokenTree,
+    Group,
 };
 
 use engine::ast;
@@ -147,7 +148,7 @@ pub trait Parser : Sized {
         let body = loop {
             match self.next() {
                 Some(TokenTree::Group(ref block)) if block.delimiter() == Delimiter::Brace => {
-                    break self.block(block.stream(), block.span())?;
+                    break self.block(block)?;
                 },
                 Some(token) => head.push(token),
                 None => {
@@ -189,7 +190,7 @@ pub trait Parser : Sized {
                     _ => {
                         match self.next() {
                             Some(TokenTree::Group(ref group)) if group.delimiter() == Delimiter::Brace => {
-                                let body = self.block(group.stream(), group.span())?;
+                                let body = self.block(group)?;
                                 segments.push(ast::Special {
                                     at_span,
                                     head: vec![else_keyword].into_iter().collect(),
@@ -221,7 +222,7 @@ pub trait Parser : Sized {
         let body = loop {
             match self.next() {
                 Some(TokenTree::Group(ref block)) if block.delimiter() == Delimiter::Brace => {
-                    break self.block(block.stream(), block.span())?;
+                    break self.block(block)?;
                 },
                 Some(token) => head.push(token),
                 None => {
@@ -259,7 +260,7 @@ pub trait Parser : Sized {
         let body = loop {
             match self.next() {
                 Some(TokenTree::Group(ref block)) if block.delimiter() == Delimiter::Brace => {
-                    break self.block(block.stream(), block.span())?;
+                    break self.block(block)?;
                 },
                 Some(token) => head.push(token),
                 None => {
@@ -336,7 +337,7 @@ pub trait Parser : Sized {
         let body = match self.next() {
             // $pat => { $stmts }
             Some(TokenTree::Group(ref body)) if body.delimiter() == Delimiter::Brace => {
-                let body = self.block(body.stream(), body.span())?;
+                let body = self.block(body)?;
                 // Trailing commas are optional if the match arm is a braced block
                 if let Some(TokenTree::Punct(ref punct)) = self.peek() {
                     if punct.as_char() == ',' {
@@ -361,7 +362,7 @@ pub trait Parser : Sized {
                         None => break,
                     }
                 }
-                self.block(body.into_iter().collect(), span)?
+                self.make_block(body.into_iter().collect(), span)?
             },
             None => {
                 let span = ast::span_tokens(head);
@@ -372,9 +373,20 @@ pub trait Parser : Sized {
         Ok(Some(ast::MatchArm { head: head.into_iter().collect(), body }))
     }
 
-    /// Parses the given token stream as a Maud expression.
-    fn block(&mut self, body: TokenStream, outer_span: Span) -> ParseResult<ast::Block<Self::Content>> {
+    fn block(&mut self, group: &Group) -> ParseResult<ast::Block<Self::Content>> {
+        let body = group.stream();
+        let outer_span = group.span();
+        self.make_block(body, outer_span)
+    }
+
+    fn make_block(&mut self, body: TokenStream, outer_span: Span) -> ParseResult<ast::Block<Self::Content>> {
         let contents = self.with_input(body).contents()?;
         Ok(ast::Block { contents, outer_span })
+    }
+    
+    fn splice(&mut self, group: &Group) -> ast::Splice {
+        let expr = group.stream();
+        let outer_span = group.span();
+        ast::Splice { expr, outer_span }
     }
 }
